@@ -1,17 +1,9 @@
 package com.nassiesse.ocr.controller;
 
-import java.awt.image.BufferedImage;
-import java.io.File;
-import java.io.IOException;
-import java.util.List;
-import java.util.concurrent.CompletableFuture;
-import java.util.logging.*;
-import java.util.stream.Collectors;
-import java.util.stream.IntStream;
-
-import javax.imageio.ImageIO;
-
 import com.nassiesse.ocr.TesseractProperties;
+import net.sourceforge.tess4j.ITesseract;
+import net.sourceforge.tess4j.Tesseract;
+import net.sourceforge.tess4j.TesseractException;
 import org.apache.pdfbox.Loader;
 import org.apache.pdfbox.pdmodel.PDDocument;
 import org.apache.pdfbox.rendering.ImageType;
@@ -27,9 +19,17 @@ import org.springframework.web.bind.annotation.ResponseBody;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
 
-import net.sourceforge.tess4j.ITesseract;
-import net.sourceforge.tess4j.Tesseract;
-import net.sourceforge.tess4j.TesseractException;
+import javax.imageio.ImageIO;
+import java.awt.image.BufferedImage;
+import java.io.File;
+import java.io.IOException;
+import java.util.List;
+import java.util.Map;
+import java.util.function.Function;
+import java.util.logging.Level;
+import java.util.logging.Logger;
+import java.util.stream.Collectors;
+import java.util.stream.IntStream;
 
 @RestController
 public class SimpleOCRController {
@@ -78,23 +78,24 @@ public class SimpleOCRController {
 		
 		// Extract images from file
 		final File missing = new File(".");
-		List<File> images = IntStream.range(0, document.getNumberOfPages())
+		Map<Integer,File> images = IntStream.range(0, document.getNumberOfPages())
 				.parallel()
-				.mapToObj(index -> {
-					try {
-						LOGGER.log(Level.INFO, "Process page " + index);
-						final PDFRenderer pdfRenderer = new PDFRenderer(document);
-						BufferedImage bufferedImage = pdfRenderer.renderImageWithDPI(index, 300, ImageType.RGB);
-						File temp = File.createTempFile("tempfile_" + index, ".png");
-						temp.deleteOnExit();
-						ImageIO.write(bufferedImage, "png", temp);
-						return temp;
-					} catch (IOException e) {
-						LOGGER.log(Level.SEVERE, e.getMessage(), e);
-						return missing;
-					}
-				})
-				.toList();
+				.mapToObj(Integer::valueOf)
+				.collect(Collectors.toUnmodifiableMap(Function.identity(),
+								index -> {
+									try {
+										LOGGER.log(Level.INFO, "Process page " + index);
+										final PDFRenderer pdfRenderer = new PDFRenderer(document);
+										BufferedImage bufferedImage = pdfRenderer.renderImageWithDPI(index, 300, ImageType.RGB);
+										File temp = File.createTempFile("tempfile_" + index, ".png");
+										temp.deleteOnExit();
+										ImageIO.write(bufferedImage, "png", temp);
+										return temp;
+									} catch (IOException e) {
+										LOGGER.log(Level.SEVERE, e.getMessage(), e);
+										return missing;
+									}
+								}));
 
 		/*
 		CompletableFuture.allOf(imageFutures.toArray(new CompletableFuture[0])).join();
@@ -103,31 +104,28 @@ public class SimpleOCRController {
 				.map(CompletableFuture::join) // Get the result of each completed future
 				.toList();
 */
-		List<CompletableFuture<String>> futures = images.stream()
-				.filter(file -> missing != file)
+		List<KeyValue> pageToText = images.entrySet().stream().parallel()
+				.filter(entry -> missing != entry.getValue())
 				.map(
-				file -> CompletableFuture.supplyAsync(() -> {
-					LOGGER.info("Running OCR on image " + file.getName());
+				entry -> {
+					LOGGER.info("Running OCR on image " + entry.getKey());
 					try {
 						final ITesseract tesseract = newTesseractInstance(this.tesseractProperties);
-						final String result = tesseract.doOCR(file);
+						final String result = tesseract.doOCR(entry.getValue());
 						Logger.getAnonymousLogger().info("Result size: " + result.length());
-						return result;
+						return new KeyValue(entry.getKey(), result);
 					} catch (TesseractException e) {
 						Logger.getAnonymousLogger().log(Level.SEVERE, e.getMessage(), e);
 					} finally {
 						// Delete temp file
-						file.delete();
+						entry.getValue().delete();
 					}
-					return "";
-				})
+					return new KeyValue(entry.getKey(), "");
+				}
 		).toList();
 
-		CompletableFuture.allOf(futures.toArray(new CompletableFuture[0])).join();
-
-		return futures.stream()
-				.map(CompletableFuture::join) // Get the result of each completed future
-				.collect(Collectors.joining());
+		pageToText.sort((k1, k2) -> k1.index - k2.index);
+		return pageToText.stream().map(KeyValue::text).collect(Collectors.joining());
 
 		/*
 		IntStream.range(0, document.getNumberOfPages())
@@ -192,5 +190,7 @@ public class SimpleOCRController {
 		return tesseract;
 	}
 
+	record KeyValue(int index, String text) {
+	}
 }
 

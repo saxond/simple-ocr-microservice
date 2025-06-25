@@ -29,8 +29,8 @@ dependencies {
 group = "com.nassiesse.ocr"
 version = "0.0.1-SNAPSHOT"
 description = "SimpleOCRMicroservice"
-java.sourceCompatibility = JavaVersion.VERSION_17
-java.targetCompatibility = JavaVersion.VERSION_17
+java.sourceCompatibility = JavaVersion.VERSION_21
+java.targetCompatibility = JavaVersion.VERSION_21
 
 publishing {
     publications.create<MavenPublication>("maven") {

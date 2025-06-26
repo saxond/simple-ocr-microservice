@@ -10,14 +10,11 @@ import java.util.logging.Logger;
 @SpringBootApplication
 @ConfigurationPropertiesScan("com.nassiesse.ocr")
 @ComponentScan("com.nassiesse.ocr.controller")
-public class SimpleOcrMicroserviceApplication {
+public class OcrApplication {
 
 	public static void main(String[] args) {
-		Runtime.getRuntime().addShutdownHook(new Thread(() -> {
-			System.err.println("WTF!");
-		}));
 		Logger.getAnonymousLogger().info("Starting application");
-        SpringApplication.run(SimpleOcrMicroserviceApplication.class, args);
+        SpringApplication.run(OcrApplication.class, args);
 	}
 
 }

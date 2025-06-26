@@ -3,7 +3,7 @@
 
 [versions]
 net-sourceforge-tess4j-tess4j = "4.4.1"
-org-apache-pdfbox-pdfbox = "[3.0.5,)"
+org-apache-pdfbox-pdfbox = "[2.0.17,)"
 org-json-json = "20250517"
 org-springframework-boot-spring-boot-starter = "3.5.3"
 org-springframework-boot-spring-boot-starter-test = "3.5.3"

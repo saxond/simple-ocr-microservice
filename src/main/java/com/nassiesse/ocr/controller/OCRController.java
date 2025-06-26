@@ -4,7 +4,7 @@ import com.nassiesse.ocr.TesseractProperties;
 import net.sourceforge.tess4j.ITesseract;
 import net.sourceforge.tess4j.Tesseract;
 import net.sourceforge.tess4j.TesseractException;
-import org.apache.pdfbox.Loader;
+import org.apache.pdfbox.io.IOUtils;
 import org.apache.pdfbox.pdmodel.PDDocument;
 import org.apache.pdfbox.rendering.ImageType;
 import org.apache.pdfbox.rendering.PDFRenderer;
@@ -19,8 +19,11 @@ import org.springframework.web.bind.annotation.ResponseBody;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
 
+import javax.imageio.ImageIO;
 import java.awt.image.BufferedImage;
+import java.io.File;
 import java.io.IOException;
+import java.io.InputStream;
 import java.util.Comparator;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
@@ -45,36 +48,59 @@ public class OCRController {
 		Logger.getAnonymousLogger().info("Started controller");
 		this.executor = Executors.newVirtualThreadPerTaskExecutor();
 				//.newScheduledThreadPool(tesseractProperties.getWorkerPoolSize());
+		initialize();
+	}
+
+	void initialize() {
+		try {
+			byte[] testBytes = getTestPDFBytes();
+			extractTextFromPDF(testBytes);
+		} catch (Exception e) {
+            LOGGER.log(Level.SEVERE, e.getMessage(), e);
+        }
+    }
+
+	static byte[] getTestPDFBytes() throws IOException {
+		try (InputStream in = OCRController.class.getResourceAsStream("/test.pdf")) {
+			return in == null ? new byte[0] : IOUtils.toByteArray(in);
+		}
 	}
 
 	@PostMapping("/api/pdf/extractText")
     public @ResponseBody ResponseEntity<String> 
 					extractTextFromPDFFile(@RequestParam("file") MultipartFile file) {
-		long startTime = System.nanoTime();
+		LOGGER.info("extractText called");
 		try {
-			
-			// Load file into PDFBox class
-			PDDocument document = Loader.loadPDF(file.getBytes());
-			PDFTextStripper stripper = new PDFTextStripper();
-			String strippedText = stripper.getText(document);
-			
-			// Check text exists into the file
-			if (strippedText.trim().isEmpty()){
-				strippedText = extractTextFromScannedDocument(document);
-			}
-			
-			JSONObject obj = new JSONObject();
-	        obj.put("fileName", file.getOriginalFilename());
-	        obj.put("text", strippedText);
-			
+			final String text = extractTextFromPDF(file.getBytes());
+
+			final JSONObject obj = new JSONObject();
+			obj.put("fileName", file.getOriginalFilename());
+			obj.put("text", text);
+
 			return new ResponseEntity<>(obj.toString(), HttpStatus.OK);
 		} catch (Exception e) {
 			return new ResponseEntity<>(e.getMessage(), HttpStatus.INTERNAL_SERVER_ERROR);
+		}
+	}
+
+	String extractTextFromPDF(byte[] bytes) throws IOException {
+		long startTime = System.nanoTime();
+		try {
+
+			final PDDocument document = PDDocument.load(bytes);
+			LOGGER.info("Loaded PDF document");
+			final PDFTextStripper stripper = new PDFTextStripper();
+			// see if we can just strip the text from the file
+			final String strippedText = stripper.getText(document);
+
+			if (true || strippedText.trim().isEmpty()){
+				return extractTextFromScannedDocument(document);
+			}
+			return strippedText;
 		} finally {
 			long durationNanos = System.nanoTime() - startTime;
 			LOGGER.info("Extraction took " + TimeUnit.NANOSECONDS.toSeconds(durationNanos) + 's');
 		}
-		
 	}
 	
 	@GetMapping("/api/pdf/ping")
@@ -110,18 +136,21 @@ public class OCRController {
 				}
 			).toList());
 
+		// delete temp files
+		images.forEach(PageImage::cleanup);
+
 		return pageToText.stream().sorted(Comparator.comparingInt(PageText::index)).map(PageText::text)
 				.collect(Collectors.joining());
 
 	}
 
-	private List<PageImage> extractImages(PDDocument document) {
+	List<PageImage> extractImages(PDDocument document) {
 		List<CompletableFuture<PageImage>> imageFutures = IntStream.range(0, document.getNumberOfPages()).mapToObj(index -> {
 			Supplier<PageImage> work = () -> {
 				try {
 					LOGGER.log(Level.INFO, "Process page " + index);
 					final PDFRenderer pdfRenderer = new PDFRenderer(document);
-					return new PageImage(index, pdfRenderer.renderImageWithDPI(index, tesseractProperties.getDpi(), ImageType.GRAY));
+					return new PageImage(index, toFile(pdfRenderer.renderImageWithDPI(index, tesseractProperties.getDpi(), ImageType.GRAY)));
 				} catch (IOException e) {
 					LOGGER.log(Level.SEVERE, e.getMessage(), e);
 					return new PageImage(index, null);
@@ -131,6 +160,16 @@ public class OCRController {
 		}).toList();
 		return joinToList(imageFutures).stream()
 				.filter(PageImage::isValid).toList();
+	}
+
+	/**
+	 * Write buffered image to temp file to that we're not holding all pdf page image bytes in memory
+	 */
+	static File toFile(BufferedImage bufferedImage) throws IOException {
+		File file = File.createTempFile("pdfimage", ".png");
+		file.deleteOnExit();
+		ImageIO.write(bufferedImage, "png", file);
+		return file;
 	}
 
 	static <T> List<T> joinToList(List<CompletableFuture<T>> futures) {
@@ -151,9 +190,13 @@ public class OCRController {
 	record PageText(int index, String text) {
 	}
 
-	record PageImage(int index, BufferedImage image) {
+	record PageImage(int index, File image) {
 		boolean isValid() {
 			return image != null;
+		}
+
+		void cleanup() {
+			image.delete();
 		}
 	}
 }

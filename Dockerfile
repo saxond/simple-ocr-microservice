@@ -24,8 +24,10 @@ RUN tesseract -v
 WORKDIR /build
 
 COPY . .
+
+ENV GRADLE_OPTS="-Dorg.gradle.daemon=false"
 # don't use gradle wrapper
-RUN gradle clean bootJar
+RUN gradle bootJar
 
 # Open the port
 EXPOSE 8080

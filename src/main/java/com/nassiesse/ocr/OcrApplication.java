@@ -9,7 +9,7 @@ import java.util.logging.Logger;
 
 @SpringBootApplication
 @ConfigurationPropertiesScan("com.nassiesse.ocr")
-@ComponentScan("com.nassiesse.ocr.controller")
+@ComponentScan(value = {"com.nassiesse.ocr.controller","com.nassiesse.ocr.service"})
 public class OcrApplication {
 
 	public static void main(String[] args) {

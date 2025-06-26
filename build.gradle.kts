@@ -20,9 +20,10 @@ repositories {
 dependencies {
     implementation(libs.org.springframework.boot.spring.boot.starter)
     implementation(libs.org.springframework.boot.spring.boot.starter.web)
-    implementation(libs.org.json.json)
     implementation(libs.org.apache.pdfbox.pdfbox)
     implementation(libs.net.sourceforge.tess4j.tess4j)
+    implementation("com.fasterxml.jackson.core:jackson-core:2.19.0")
+    implementation("software.amazon.awssdk:s3:2.31.70")
     testImplementation(libs.org.springframework.boot.spring.boot.starter.test)
 }
 

@@ -5,12 +5,14 @@
 net-sourceforge-tess4j-tess4j = "4.4.1"
 org-apache-pdfbox-pdfbox = "[2.0.17,)"
 org-springframework-boot-spring-boot-starter = "3.5.3"
-org-springframework-boot-spring-boot-starter-test = "3.5.3"
-org-springframework-boot-spring-boot-starter-web = "3.5.3"
+com-fasterxml-jackson-core = "2.19.0"
+software-amazon-awssdk-s3 = "2.31.70"
 
 [libraries]
+software-amazon-awssdk-s3 = { module = "software.amazon.awssdk:s3", version.ref = "software-amazon-awssdk-s3" }
+com-fasterxml-jackson-core = { module = "com.fasterxml.jackson.core:jackson-core", version.ref = "com-fasterxml-jackson-core" }
 net-sourceforge-tess4j-tess4j = { module = "net.sourceforge.tess4j:tess4j", version.ref = "net-sourceforge-tess4j-tess4j" }
 org-apache-pdfbox-pdfbox = { module = "org.apache.pdfbox:pdfbox", version.ref = "org-apache-pdfbox-pdfbox" }
 org-springframework-boot-spring-boot-starter = { module = "org.springframework.boot:spring-boot-starter", version.ref = "org-springframework-boot-spring-boot-starter" }
-org-springframework-boot-spring-boot-starter-test = { module = "org.springframework.boot:spring-boot-starter-test", version.ref = "org-springframework-boot-spring-boot-starter-test" }
-org-springframework-boot-spring-boot-starter-web = { module = "org.springframework.boot:spring-boot-starter-web", version.ref = "org-springframework-boot-spring-boot-starter-web" }
+org-springframework-boot-spring-boot-starter-test = { module = "org.springframework.boot:spring-boot-starter-test", version.ref = "org-springframework-boot-spring-boot-starter" }
+org-springframework-boot-spring-boot-starter-web = { module = "org.springframework.boot:spring-boot-starter-web", version.ref = "org-springframework-boot-spring-boot-starter" }

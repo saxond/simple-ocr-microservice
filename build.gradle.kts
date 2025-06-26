@@ -22,8 +22,8 @@ dependencies {
     implementation(libs.org.springframework.boot.spring.boot.starter.web)
     implementation(libs.org.apache.pdfbox.pdfbox)
     implementation(libs.net.sourceforge.tess4j.tess4j)
-    implementation("com.fasterxml.jackson.core:jackson-core:2.19.0")
-    implementation("software.amazon.awssdk:s3:2.31.70")
+    implementation(libs.com.fasterxml.jackson.core)
+    implementation(libs.software.amazon.awssdk.s3)
     testImplementation(libs.org.springframework.boot.spring.boot.starter.test)
 }
 

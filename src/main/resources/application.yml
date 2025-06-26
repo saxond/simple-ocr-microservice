@@ -3,3 +3,9 @@ server:
 spring.servlet.multipart:
   max-file-size: 500MB
   max-request-size: 500MB
+
+tesseract:
+  dataPath: /usr/share/tessdata
+  language: eng
+  dpi: 300
+  workerPoolSize: 10

@@ -7,7 +7,9 @@ import org.springframework.boot.context.properties.ConfigurationPropertiesScan;
 @ConfigurationPropertiesScan
 public class TesseractProperties {
     private String dataPath;
-    private String language = "ita";
+    private String language = "eng";
+    private int workerPoolSize = 8;
+    private int dpi = 300;
 
     public String getDataPath() {
         return dataPath;
@@ -23,5 +25,21 @@ public class TesseractProperties {
 
     public void setLanguage(String language) {
         this.language = language;
+    }
+
+    public int getWorkerPoolSize() {
+        return workerPoolSize;
+    }
+
+    public void setWorkerPoolSize(int workerPoolSize) {
+        this.workerPoolSize = workerPoolSize;
+    }
+
+    public int getDpi() {
+        return dpi;
+    }
+
+    public void setDpi(int dpi) {
+        this.dpi = dpi;
     }
 }

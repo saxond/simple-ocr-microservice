@@ -7,9 +7,15 @@ RUN apt update -y && apt upgrade -y
 # Install tesseract library
 RUN apt install libleptonica-dev tesseract-ocr -y
 
+# Install fonts
+ENV DEBIAN_FRONTEND noninteractive
+ENV DEBIAN_FRONTEND teletype
+RUN apt install ttf-mscorefonts-installer fonts-liberation -y --no-install-recommends
+RUN fc-cache -fv
+
 # Download last language package
 RUN mkdir -p /usr/share/tessdata
-ADD https://github.com/tesseract-ocr/tessdata/raw/refs/heads/main/ita.traineddata /usr/share/tessdata/ita.traineddata
+ADD https://github.com/tesseract-ocr/tessdata/raw/refs/heads/main/eng.traineddata /usr/share/tessdata/eng.traineddata
 
 # Check the installation status
 RUN tesseract --list-langs    

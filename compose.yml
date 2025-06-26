@@ -6,6 +6,6 @@ services:
     expose:
       - 8082
     environment:
-      JAVA_OPTS: "-Dspring.profiles.active=dev"
+      JAVA_OPTS: "-Dfile.encoding=UTF8 -Dspring.profiles.active=dev -Xmx2048m -Xmx2048m"
     ports:
       - "8082:8082"

@@ -7,13 +7,12 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 
 import static org.assertj.core.api.AssertionsForClassTypes.assertThat;
-import static org.junit.jupiter.api.Assertions.*;
 
 @SpringBootTest
-class SimpleOCRControllerTest {
+class OCRControllerTest {
 
     @Autowired
-    SimpleOCRController controller;
+    OCRController controller;
 
     @Autowired
     TesseractProperties properties;
@@ -25,7 +24,7 @@ class SimpleOCRControllerTest {
 
     @Test
     public void newTesseractInstance() {
-        ITesseract instance = SimpleOCRController.newTesseractInstance(properties);
+        ITesseract instance = OCRController.newTesseractInstance(properties);
         assertThat(instance).isNotNull();
     }
 }
